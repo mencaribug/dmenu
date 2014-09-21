@@ -1,4 +1,5 @@
 #!/bin/sh
+extra=${XDG_CONFIG_HOME:-"$HOME/.config"}/dmenu/extra
 cachedir=${XDG_CACHE_HOME:-"$HOME/.cache"}
 if [ -d "$cachedir" ]; then
 	cache=$cachedir/dmenu_run
@@ -6,8 +7,8 @@ else
 	cache=$HOME/.dmenu_cache # if no xdg dir, fall back to dotfile in ~
 fi
 IFS=:
-if stest -dqr -n "$cache" $PATH; then
-	stest -flx $PATH | sort -u | tee "$cache"
+if stest -dqr -n "$cache" $PATH || stest -fqr -n "$cache" "$extra"; then
+    ( stest -flx $PATH; [ -r "$extra" ] && cat "$extra" ) | sort -u | tee "$cache"
 else
 	cat "$cache"
 fi
