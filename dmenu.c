@@ -28,6 +28,8 @@ struct Item {
 static void appenditem(Item *item, Item **list, Item **last);
 static void calcoffsets(void);
 static char *cistrstr(const char *s, const char *sub);
+static char *strstrfuzzy(const char *s, const char *sub);
+static int strncmpfuzzy(const char *s, const char *sub, size_t len);
 static void drawmenu(void);
 static void grabkeyboard(void);
 static void insert(const char *str, ssize_t n);
@@ -79,6 +81,10 @@ main(int argc, char *argv[]) {
 		else if(!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
+		}
+		else if(!strcmp(argv[i], "-z")) { /* case-insensitive fuzzy matching */
+			fstrncmp = strncmpfuzzy;
+			fstrstr = strstrfuzzy;
 		}
 		else if(i+1 == argc)
 			usage();
@@ -156,6 +162,39 @@ cistrstr(const char *s, const char *sub) {
 		if(!strncasecmp(s, sub, len))
 			return (char *)s;
 	return NULL;
+}
+
+char *
+strcasechr(const char *s, int c) {
+	char u = toupper(c);
+	char l = tolower(c);
+	while(*s && *s != u && *s != l)
+		s++;
+	return *s ? (char *)s : NULL;
+}
+
+char *
+strstrfuzzy(const char *s, const char *sub) {
+	if(*sub == '\0')
+		return (char *)s;
+	s = strcasechr(s, *sub++);
+	while(s && *sub)
+		s = strcasechr(s + 1, *sub++);
+	return (char *)s;
+}
+
+int
+strncmpfuzzy(const char *s, const char *sub, size_t len) {
+	if(len == 0)
+		return 0;
+	if(tolower(*s) != tolower(*sub++))
+		return 1;
+	while(--len && s && *sub)
+		s = strcasechr(s + 1, *sub++);
+	if(len == 1 && *sub == '\0')
+		return (s && s[1] == '\0') ? 0 : 1;
+	else
+		return s ? 0 : 1;
 }
 
 void
@@ -424,9 +463,9 @@ match(void) {
 		if(i != tokc) /* not all tokens match */
 			continue;
 		/* exact matches go first, then prefixes, then substrings */
-		if(!tokc || !fstrncmp(tokv[0], item->text, len+1))
+		if(!tokc || !fstrncmp(item->text, tokv[0], len+1))
 			appenditem(item, &matches, &matchend);
-		else if(!fstrncmp(tokv[0], item->text, len))
+		else if(!fstrncmp(item->text, tokv[0], len))
 			appenditem(item, &lprefix, &prefixend);
 		else
 			appenditem(item, &lsubstr, &substrend);
@@ -620,7 +659,7 @@ setup(void) {
 
 void
 usage(void) {
-	fputs("usage: dmenu [-b] [-f] [-i] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
+	fputs("usage: dmenu [-b] [-f] [-i|-z] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
 	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-v]\n", stderr);
 	exit(EXIT_FAILURE);
 }

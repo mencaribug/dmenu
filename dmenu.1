@@ -5,7 +5,7 @@ dmenu \- dynamic menu
 .B dmenu
 .RB [ \-b ]
 .RB [ \-f ]
-.RB [ \-i ]
+.RB [ \-i|\-z ]
 .RB [ \-l
 .RB [ \-m
 .IR monitor ]
@@ -47,6 +47,9 @@ X until stdin reaches end\-of\-file.
 .TP
 .B \-i
 dmenu matches menu items case insensitively.
+.TP
+.B \-z
+dmenu matches menu items using case insensitive fuzzy matching.
 .TP
 .BI \-l " lines"
 dmenu lists items vertically, with the given number of lines.
